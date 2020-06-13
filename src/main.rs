@@ -1,8 +1,10 @@
 use structopt::StructOpt;
 
 mod config;
+mod error;
+mod handler;
+mod route;
 mod server;
-mod service;
 mod tls;
 
 const ABOUT: &str = "A simple proxy server.";
@@ -26,10 +28,13 @@ pub struct Options {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().filter_or("PROXY_SERVER_LOG", "info"));
+    log_panics::init();
+
     let options = Options::from_args();
     log::debug!("{:#?}", options);
 
     let config = config::parse(&options.config)?;
+    let router = route::Router::new(config);
 
-    server::run(&options.server, config.into_service()).await
+    server::run(&options.server, router.into_service()).await
 }

@@ -7,6 +7,8 @@ use fn_error_context::context;
 use serde::Deserialize;
 use structopt::StructOpt;
 
+use crate::route;
+
 #[derive(Debug, StructOpt)]
 pub struct Options {
     #[structopt(
@@ -32,7 +34,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct Route {
-    pub route: String,
+    pub route: route::Route,
     #[serde(flatten)]
     pub kind: RouteKind,
 }
