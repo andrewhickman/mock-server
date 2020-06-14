@@ -49,20 +49,28 @@ impl Router {
 }
 
 impl Router {
-    pub async fn try_handle(self: Arc<Self>, mut request: http::Request<Body>) -> http::Response<Body> {
+    pub async fn try_handle(
+        self: Arc<Self>,
+        mut request: http::Request<Body>,
+    ) -> http::Response<Body> {
+        let mut response = error::from_status(http::StatusCode::NOT_FOUND);
+
         let matches = self.regex_set.matches(request.uri().path());
         if matches.matched_any() {
             for match_index in matches {
-                match self.handlers[match_index].handle(request) {
+                match self.handlers[match_index].handle(request).await {
                     Ok(response) => return response,
-                    Err(request2) => request = request2,
+                    Err(parts) => {
+                        request = parts.0;
+                        response = parts.1;
+                    }
                 }
             }
         } else {
             log::info!("Path `{}` did not match any route", request.uri().path());
         }
 
-        error::not_found()
+        response
     }
 
     pub fn handle(
@@ -76,7 +84,7 @@ impl Router {
                     "Panic while handling request: {}",
                     fmt_panic_payload(payload)
                 );
-                error::internal_server_error()
+                error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR)
             })
     }
 
