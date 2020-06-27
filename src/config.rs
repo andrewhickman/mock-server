@@ -33,8 +33,10 @@ pub struct Config {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Route {
     pub route: route::Route,
+    pub rewrite_path: Option<String>,
     #[serde(flatten)]
     pub kind: RouteKind,
 }

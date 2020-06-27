@@ -41,6 +41,7 @@ regex-syntax = "0.6.18"
 log-panics = { version = "2.0.0", features = ["with-backtrace"] }
 headers = "0.3.2"
 mime_guess = "2.0.3"
+urlencoding = "1.1.1"
 
 [build-dependencies]
 vergen = "3.1.0"

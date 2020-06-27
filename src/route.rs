@@ -38,7 +38,7 @@ impl Router {
         let handlers = config
             .routes
             .into_iter()
-            .map(|route| Handler::new(route.kind))
+            .map(|route| Handler::new(route))
             .collect();
 
         Router {
@@ -103,7 +103,7 @@ impl Router {
 
 impl Route {
     pub fn new(path: String) -> Result<Self, impl Display> {
-        const PATH_SEGMENT_PATTERN: &str = r"[\w\-\.~%!$&'()*+,;=:@]*";
+        const PATH_SEGMENT_PATTERN: &str = r"([\w\-\.~%!$&'()*+,;=:@]*)";
         static PATH_SEGMENT_REGEX: Lazy<Regex> =
             Lazy::new(|| Regex::new(PATH_SEGMENT_PATTERN).unwrap());
 
@@ -137,6 +137,10 @@ impl Route {
             regex,
             path,
         })
+    }
+
+    pub fn to_regex(&self) -> Regex {
+        Regex::new(&self.regex).expect("error in generated regex")
     }
 }
 
