@@ -103,13 +103,19 @@ impl Router {
 
 impl Route {
     pub fn new(path: String) -> Result<Self, impl Display> {
-        const PATH_SEGMENT_PATTERN: &str = r"([\w\-\.~%!$&'()*+,;=:@]*)";
-        static PATH_SEGMENT_REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new(PATH_SEGMENT_PATTERN).unwrap());
+        macro_rules! path_chars_pattern {
+            () => {
+                r"[\w\-\.~%!$&'()*+,;=:@]*"
+            };
+        }
 
-        const MULTI_PATH_SEGMENT_PATTERN: &str = r"((?:/[\w\-\.~%!$&'()*+,;=:@]*)*)";
+        const PATH_SEGMENT_PATTERN: &str = concat!(r"/(", path_chars_pattern!(), ")");
+        const MULTI_PATH_SEGMENT_PATTERN: &str = concat!(r"((?:/", path_chars_pattern!(), ")*)");
 
-        let mut regex = String::with_capacity(path.len() + 3);
+        static PATH_CHARS_REGEX: Lazy<Regex> =
+            Lazy::new(|| Regex::new(path_chars_pattern!()).unwrap());
+
+        let mut regex = String::with_capacity(path.len() + 5);
         let mut precedence = (0, 0);
 
         regex.push('^');
@@ -118,14 +124,13 @@ impl Route {
                 continue;
             }
 
-            if !PATH_SEGMENT_REGEX.is_match(segment) {
+            if !PATH_CHARS_REGEX.is_match(segment) {
                 return Err("invalid character in path");
             }
 
             match segment {
                 "*" => {
                     precedence.1 += 1;
-                    regex.push('/');
                     regex.push_str(PATH_SEGMENT_PATTERN);
                 }
                 "**" => {
