@@ -3,7 +3,7 @@ use std::fs::File;
 use std::future::Future;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::net::SocketAddr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{format_err, Context, Result};
 use fn_error_context::context;
@@ -33,14 +33,12 @@ pub struct Options {
         help = "Port to listen on [default: an OS-assigned port]"
     )]
     port: Option<u16>,
-    #[structopt(name = "tls", long, help = "Serve using TLS", requires_all = &["tls-cert", "tls-key"])]
-    tls: bool,
     #[structopt(
         name = "tls-cert",
         long,
         value_name = "CERT_FILE",
         help = "Path to the certificate to use for TLS",
-        requires = "tls",
+        requires = "tls-key",
         parse(from_os_str)
     )]
     tls_cert: Option<PathBuf>,
@@ -49,7 +47,7 @@ pub struct Options {
         long,
         value_name = "KEY_FILE",
         help = "Path to the private key to use for TLS",
-        requires = "tls",
+        requires = "tls-cert",
         parse(from_os_str)
     )]
     tls_key: Option<PathBuf>,
@@ -103,9 +101,9 @@ impl Options {
     }
 
     fn tls_config(&self) -> Result<Option<rustls::ServerConfig>> {
-        if self.tls {
-            let certs = self.tls_certs()?;
-            let key = self.tls_key()?;
+        if let (Some(cert_path), Some(key_path)) = (&self.tls_cert, &self.tls_key) {
+            let certs = self.tls_certs(cert_path)?;
+            let key = self.tls_key(key_path)?;
             let mut config = rustls::ServerConfig::new(rustls::NoClientAuth::new());
             config.set_single_cert(certs, key)?;
             Ok(Some(config))
@@ -114,15 +112,15 @@ impl Options {
         }
     }
 
-    #[context("failed to load TLS certificates from `{}`", self.tls_cert.as_ref().unwrap().display())]
-    fn tls_certs(&self) -> Result<Vec<rustls::Certificate>> {
-        let mut reader = BufReader::new(File::open(self.tls_cert.as_ref().unwrap())?);
+    #[context("failed to load TLS certificates from `{}`", path.display())]
+    fn tls_certs(&self, path: &Path) -> Result<Vec<rustls::Certificate>> {
+        let mut reader = BufReader::new(File::open(path)?);
         pemfile::certs(&mut reader).map_err(|()| format_err!("invalid certificate"))
     }
 
-    #[context("failed to load TLS key from `{}`", self.tls_key.as_ref().unwrap().display())]
-    fn tls_key(&self) -> Result<rustls::PrivateKey> {
-        let mut reader = BufReader::new(File::open(self.tls_key.as_ref().unwrap())?);
+    #[context("failed to load TLS key from `{}`", path.display())]
+    fn tls_key(&self, path: &Path) -> Result<rustls::PrivateKey> {
+        let mut reader = BufReader::new(File::open(path)?);
 
         let pkcs8_keys = pemfile::pkcs8_private_keys(&mut reader).map_err(|()| {
             format_err!(
