@@ -6,8 +6,7 @@ use tokio::fs;
 use tokio::io::ErrorKind;
 use urlencoding::decode;
 
-use crate::config;
-use crate::error;
+use crate::{config, error};
 
 #[derive(Debug)]
 pub struct FileHandler {

@@ -25,7 +25,7 @@ pub struct Router {
 
 #[derive(Debug)]
 pub struct Route {
-    precedence: u32,
+    precedence: (u32, u32),
     path: String,
     regex: String,
 }
@@ -107,8 +107,10 @@ impl Route {
         static PATH_SEGMENT_REGEX: Lazy<Regex> =
             Lazy::new(|| Regex::new(PATH_SEGMENT_PATTERN).unwrap());
 
+        const MULTI_PATH_SEGMENT_PATTERN: &str = r"((?:[\w\-\.~%!$&'()*+,;=:@/]*)*)";
+
         let mut regex = String::with_capacity(path.len() + 3);
-        let mut precedence = 0;
+        let mut precedence = (0, 0);
 
         regex.push('^');
         for segment in path.split('/') {
@@ -124,8 +126,13 @@ impl Route {
 
             match segment {
                 "*" => {
-                    precedence += 1;
+                    precedence.1 += 1;
                     regex.push_str(PATH_SEGMENT_PATTERN);
+                }
+                "**" => {
+                    precedence.0 += 1;
+                    regex.push('?');
+                    regex.push_str(MULTI_PATH_SEGMENT_PATTERN);
                 }
                 _ => regex_syntax::escape_into(segment, &mut regex),
             }

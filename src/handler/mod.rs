@@ -1,9 +1,11 @@
 mod fs;
+mod proxy;
 
 use hyper::Body;
 use regex::Regex;
 
 use self::fs::{DirHandler, FileHandler};
+use self::proxy::ProxyHandler;
 use crate::config;
 
 #[derive(Debug)]
@@ -16,6 +18,7 @@ pub struct Handler {
 pub enum HandlerKind {
     File(FileHandler),
     Dir(DirHandler),
+    Proxy(ProxyHandler),
 }
 
 #[derive(Debug)]
@@ -39,6 +42,7 @@ impl Handler {
         let kind = match kind {
             config::RouteKind::File(file) => HandlerKind::File(FileHandler::new(file)),
             config::RouteKind::Dir(dir) => HandlerKind::Dir(DirHandler::new(dir)),
+            config::RouteKind::Proxy(proxy) => HandlerKind::Proxy(ProxyHandler::new(proxy)),
         };
 
         Handler {
@@ -59,6 +63,7 @@ impl Handler {
         match &self.kind {
             HandlerKind::File(file) => file.handle(request).await,
             HandlerKind::Dir(dir) => dir.handle(request, &path).await,
+            HandlerKind::Proxy(proxy) => proxy.handle(request, &path).await,
         }
     }
 }
