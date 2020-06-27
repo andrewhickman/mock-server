@@ -107,7 +107,7 @@ impl Route {
         static PATH_SEGMENT_REGEX: Lazy<Regex> =
             Lazy::new(|| Regex::new(PATH_SEGMENT_PATTERN).unwrap());
 
-        const MULTI_PATH_SEGMENT_PATTERN: &str = r"((?:[\w\-\.~%!$&'()*+,;=:@/]*)*)";
+        const MULTI_PATH_SEGMENT_PATTERN: &str = r"((?:/[\w\-\.~%!$&'()*+,;=:@]*)*)";
 
         let mut regex = String::with_capacity(path.len() + 3);
         let mut precedence = (0, 0);
@@ -122,19 +122,20 @@ impl Route {
                 return Err("invalid character in path");
             }
 
-            regex.push_str(r"/");
-
             match segment {
                 "*" => {
                     precedence.1 += 1;
+                    regex.push('/');
                     regex.push_str(PATH_SEGMENT_PATTERN);
                 }
                 "**" => {
                     precedence.0 += 1;
-                    regex.push('?');
                     regex.push_str(MULTI_PATH_SEGMENT_PATTERN);
                 }
-                _ => regex_syntax::escape_into(segment, &mut regex),
+                _ => {
+                    regex.push('/');
+                    regex_syntax::escape_into(segment, &mut regex);
+                }
             }
         }
         regex.push_str(r"/?$");
