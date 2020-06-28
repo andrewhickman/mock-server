@@ -25,9 +25,15 @@ pub struct Router {
 
 #[derive(Debug)]
 pub struct Route {
-    precedence: (u32, u32),
+    precedence: Precedence,
     path: String,
     regex: String,
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialOrd, Ord, Eq, PartialEq)]
+struct Precedence {
+    multi_wildcards: u32,
+    wildcards: u32,
 }
 
 impl Router {
@@ -116,7 +122,7 @@ impl Route {
             Lazy::new(|| Regex::new(path_chars_pattern!()).unwrap());
 
         let mut regex = String::with_capacity(path.len() + 5);
-        let mut precedence = (0, 0);
+        let mut precedence = Precedence::default();
 
         regex.push('^');
         for segment in path.split('/') {
@@ -130,11 +136,11 @@ impl Route {
 
             match segment {
                 "*" => {
-                    precedence.1 += 1;
+                    precedence.wildcards += 1;
                     regex.push_str(PATH_SEGMENT_PATTERN);
                 }
                 "**" => {
-                    precedence.0 += 1;
+                    precedence.multi_wildcards += 1;
                     regex.push_str(MULTI_PATH_SEGMENT_PATTERN);
                 }
                 _ => {
@@ -181,4 +187,37 @@ fn fmt_panic_payload(payload: Box<dyn Any + Send + 'static>) -> impl Display {
     } else {
         Cow::Borrowed("Box<Any>")
     }
+}
+
+#[test]
+fn test_precedence() {
+    assert!(
+        Precedence {
+            multi_wildcards: 0,
+            wildcards: 0,
+        } < Precedence {
+            multi_wildcards: 0,
+            wildcards: 1,
+        }
+    );
+
+    assert!(
+        Precedence {
+            multi_wildcards: 0,
+            wildcards: 1,
+        } < Precedence {
+            multi_wildcards: 1,
+            wildcards: 0,
+        }
+    );
+
+    assert!(
+        Precedence {
+            multi_wildcards: 1,
+            wildcards: 0,
+        } < Precedence {
+            multi_wildcards: 1,
+            wildcards: 1,
+        }
+    );
 }
