@@ -109,17 +109,16 @@ impl Router {
 
 impl Route {
     pub fn new(path: String) -> Result<Self, impl Display> {
-        macro_rules! path_chars_pattern {
+        macro_rules! chars {
             () => {
                 r"[\w\-\.~%!$&'()*+,;=:@]*"
             };
         }
 
-        const PATH_SEGMENT_PATTERN: &str = concat!(r"/(", path_chars_pattern!(), ")");
-        const MULTI_PATH_SEGMENT_PATTERN: &str = concat!(r"((?:/", path_chars_pattern!(), ")*)");
+        const PATH_SEGMENT_PATTERN: &str = concat!(r"/(", chars!(), ")");
+        const MULTI_PATH_SEGMENT_PATTERN: &str = concat!(r"/(", chars!(), "(?:/", chars!(), ")*)");
 
-        static PATH_CHARS_REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new(path_chars_pattern!()).unwrap());
+        static PATH_CHARS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(chars!()).unwrap());
 
         let mut regex = String::with_capacity(path.len() + 5);
         let mut precedence = Precedence::default();
