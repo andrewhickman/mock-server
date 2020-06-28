@@ -120,6 +120,16 @@ async fn file_response(path: &Path) -> http::Response<Body> {
             log::info!("Invalid file name: `{}`", path.display());
             return error::from_status(http::StatusCode::NOT_FOUND);
         }
+        #[cfg(windows)]
+        Err(err) if err.raw_os_error() == Some(5) && path.is_dir() => {
+            log::info!("Path is a directory: `{}`", path.display());
+            return error::from_status(http::StatusCode::NOT_FOUND);
+        }
+        #[cfg(unix)]
+        Err(err) if err.raw_os_error() == Some(21) => {
+            log::info!("Path is a directory: `{}`", path.display());
+            return error::from_status(http::StatusCode::NOT_FOUND);
+        }
         Err(err) => {
             log::error!("Error opening file: {}", err);
             return error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR);
