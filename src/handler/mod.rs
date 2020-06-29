@@ -1,10 +1,13 @@
 mod fs;
+mod json;
 mod proxy;
 
+use anyhow::Result;
 use hyper::Body;
 use regex::Regex;
 
 use self::fs::{DirHandler, FileHandler};
+use self::json::JsonHandler;
 use self::proxy::ProxyHandler;
 use crate::config;
 
@@ -19,6 +22,7 @@ pub enum HandlerKind {
     File(FileHandler),
     Dir(DirHandler),
     Proxy(ProxyHandler),
+    Json(JsonHandler),
 }
 
 #[derive(Debug)]
@@ -28,7 +32,7 @@ pub struct PathRewriter {
 }
 
 impl Handler {
-    pub fn new(route: config::Route) -> Self {
+    pub async fn new(route: config::Route) -> Result<Self> {
         let config::Route {
             rewrite_path,
             route,
@@ -43,12 +47,13 @@ impl Handler {
             config::RouteKind::File(file) => HandlerKind::File(FileHandler::new(file)),
             config::RouteKind::Dir(dir) => HandlerKind::Dir(DirHandler::new(dir)),
             config::RouteKind::Proxy(proxy) => HandlerKind::Proxy(ProxyHandler::new(proxy)),
+            config::RouteKind::Json(json) => HandlerKind::Json(JsonHandler::new(json).await?),
         };
 
-        Handler {
+        Ok(Handler {
             path_rewriter,
             kind,
-        }
+        })
     }
 
     pub async fn handle(
@@ -64,6 +69,7 @@ impl Handler {
             HandlerKind::File(file) => file.handle(request).await,
             HandlerKind::Dir(dir) => dir.handle(request, &path).await,
             HandlerKind::Proxy(proxy) => proxy.handle(request, &path).await,
+            HandlerKind::Json(json) => json.handle(request, &path).await,
         }
     }
 }

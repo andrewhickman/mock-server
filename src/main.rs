@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
     log::debug!("{:#?}", options);
 
     let config = config::parse(&options.config)?;
-    let router = route::Router::new(config);
+    let router = route::Router::new(config).await?;
 
     server::run(&options.server, router.into_service()).await
 }

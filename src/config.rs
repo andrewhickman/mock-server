@@ -49,6 +49,7 @@ pub enum RouteKind {
     Dir(DirRoute),
     File(FileRoute),
     Proxy(ProxyRoute),
+    Json(JsonRoute),
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,6 +60,13 @@ pub struct DirRoute {
 #[derive(Debug, Deserialize)]
 pub struct FileRoute {
     pub path: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JsonRoute {
+    pub path: PathBuf,
+    #[serde(default)]
+    pub pretty: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -86,6 +94,7 @@ impl Route {
             RouteKind::Dir(dir) => dir.validate(),
             RouteKind::File(file) => file.validate(),
             RouteKind::Proxy(proxy) => proxy.validate(),
+            RouteKind::Json(json) => json.validate(),
         }
     }
 }
@@ -115,6 +124,15 @@ impl ProxyRoute {
         }
         if self.uri.authority().is_none() {
             bail!("url must include authority");
+        }
+        Ok(())
+    }
+}
+
+impl JsonRoute {
+    fn validate(&self) -> Result<()> {
+        if !self.path.is_file() {
+            bail!("`{}` is not a file", self.path.display());
         }
         Ok(())
     }

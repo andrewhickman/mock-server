@@ -6,7 +6,8 @@ use std::future::Future;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
-use futures::future::{FutureExt, TryFutureExt};
+use anyhow::Result;
+use futures::future::{self, FutureExt, TryFutureExt};
 use hyper::service::{service_fn, Service};
 use hyper::Body;
 use once_cell::sync::Lazy;
@@ -37,20 +38,16 @@ struct Precedence {
 }
 
 impl Router {
-    pub fn new(mut config: Config) -> Self {
+    pub async fn new(mut config: Config) -> Result<Self> {
         config.routes.sort_by_key(|route| route.route.precedence);
         let regex_set = RegexSet::new(config.routes.iter().map(|route| &route.route.regex))
             .expect("error in generated regex");
-        let handlers = config
-            .routes
-            .into_iter()
-            .map(|route| Handler::new(route))
-            .collect();
+        let handlers = future::try_join_all(config.routes.into_iter().map(Handler::new)).await?;
 
-        Router {
+        Ok(Router {
             regex_set,
             handlers,
-        }
+        })
     }
 }
 
@@ -115,8 +112,8 @@ impl Route {
             };
         }
 
-        const PATH_SEGMENT_PATTERN: &str = concat!(r"/(", chars!(), ")");
-        const MULTI_PATH_SEGMENT_PATTERN: &str = concat!(r"/(", chars!(), "(?:/", chars!(), ")*)");
+        const PATH_SEGMENT_PATTERN: &str = concat!(r"(/", chars!(), ")");
+        const MULTI_PATH_SEGMENT_PATTERN: &str = concat!("((?:/", chars!(), ")*)");
 
         static PATH_CHARS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(chars!()).unwrap());
 
