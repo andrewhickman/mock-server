@@ -15,8 +15,8 @@ use regex::{Regex, RegexSet};
 use serde::de::{self, Deserialize, Deserializer};
 
 use crate::config::Config;
-use crate::error;
 use crate::handler::Handler;
+use crate::response;
 
 #[derive(Debug)]
 pub struct Router {
@@ -56,7 +56,7 @@ impl Router {
         self: Arc<Self>,
         mut request: http::Request<Body>,
     ) -> http::Response<Body> {
-        let mut response = error::from_status(http::StatusCode::NOT_FOUND);
+        let mut response = response::from_status(http::StatusCode::NOT_FOUND);
 
         let matches = self.regex_set.matches(request.uri().path());
         if matches.matched_any() {
@@ -87,7 +87,7 @@ impl Router {
                     "Panic while handling request: {}",
                     fmt_panic_payload(payload)
                 );
-                error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                response::from_status(http::StatusCode::INTERNAL_SERVER_ERROR)
             })
     }
 

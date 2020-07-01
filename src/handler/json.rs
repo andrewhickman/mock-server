@@ -7,13 +7,13 @@ use headers::{ContentType, HeaderMapExt};
 use hyper::body::{self, Body};
 use json_patch::{Patch, PatchError};
 use mime::Mime;
-use serde::{de::DeserializeOwned, ser::Serialize};
+use serde::de::DeserializeOwned;
 use tokio::fs::{self, File};
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{Notify, RwLock};
 use urlencoding::decode;
 
-use crate::{config, error};
+use crate::{config, response};
 
 #[derive(Debug)]
 pub struct JsonHandler {
@@ -77,7 +77,7 @@ impl JsonHandler {
             Ok(path) => path,
             Err(err) => {
                 log::info!("Invalid path `{}`: {}", path, err);
-                return Ok(error::from_status(http::StatusCode::BAD_REQUEST));
+                return Ok(response::from_status(http::StatusCode::BAD_REQUEST));
             }
         };
 
@@ -86,7 +86,7 @@ impl JsonHandler {
             &http::Method::PATCH => Ok(self.handle_patch(request, &path).await),
             _ => Err((
                 request,
-                error::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
+                response::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
             )),
         }
     }
@@ -94,10 +94,10 @@ impl JsonHandler {
     pub async fn handle_get(&self, _: http::Request<Body>, path: &str) -> http::Response<Body> {
         let value = self.state.value.read().await;
         match value.pointer(path) {
-            Some(subvalue) => json_response(subvalue),
+            Some(subvalue) => response::json(subvalue),
             None => {
                 log::info!("Pointer `{}` did not match JSON", path);
-                return error::from_status(http::StatusCode::NOT_FOUND);
+                return response::from_status(http::StatusCode::NOT_FOUND);
             }
         }
     }
@@ -118,19 +118,21 @@ impl JsonHandler {
                 Some(subvalue) => subvalue,
                 None => {
                     log::info!("Pointer `{}` did not match JSON", path);
-                    return error::from_status(http::StatusCode::NOT_FOUND);
+                    return response::from_status(http::StatusCode::NOT_FOUND);
                 }
             };
 
             if let Err(err) = json_patch::patch(subvalue, &patch) {
                 log::info!("Failed to apply patch: {}", err);
                 return match err {
-                    PatchError::TestFailed => error::from_status(http::StatusCode::CONFLICT),
-                    PatchError::InvalidPointer => error::from_status(http::StatusCode::NOT_FOUND),
+                    PatchError::TestFailed => response::from_status(http::StatusCode::CONFLICT),
+                    PatchError::InvalidPointer => {
+                        response::from_status(http::StatusCode::NOT_FOUND)
+                    }
                 };
             }
 
-            json_response(subvalue)
+            response::json(subvalue)
         };
 
         self.state.dirty.notify();
@@ -182,12 +184,14 @@ async fn json_request<T: DeserializeOwned>(
     match request.headers().typed_try_get::<ContentType>() {
         Err(err) => {
             log::info!("Error parsing content-type header: {}", err);
-            return Err(error::from_status(http::StatusCode::BAD_REQUEST));
+            return Err(response::from_status(http::StatusCode::BAD_REQUEST));
         }
         Ok(Some(content_type)) => {
             let mime: Mime = content_type.into();
             if mime.subtype() != mime::JSON && mime.suffix() != Some(mime::JSON) {
-                return Err(error::from_status(http::StatusCode::UNSUPPORTED_MEDIA_TYPE));
+                return Err(response::from_status(
+                    http::StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                ));
             }
         }
         Ok(None) => (),
@@ -197,7 +201,9 @@ async fn json_request<T: DeserializeOwned>(
         Ok(buf) => buf,
         Err(err) => {
             log::error!("Error reading request body: {}", err);
-            return Err(error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(response::from_status(
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+            ));
         }
     };
 
@@ -205,14 +211,7 @@ async fn json_request<T: DeserializeOwned>(
         Ok(value) => Ok(value),
         Err(err) => {
             log::info!("Error deserializing request body: {}", err);
-            Err(error::from_status(http::StatusCode::BAD_REQUEST))
+            Err(response::from_status(http::StatusCode::BAD_REQUEST))
         }
     }
-}
-
-fn json_response<T: Serialize>(value: &T) -> http::Response<Body> {
-    let body = serde_json::to_string(value).expect("writing value to string should not fail");
-    let mut response = http::Response::new(body.into());
-    response.headers_mut().typed_insert(ContentType::json());
-    response
 }

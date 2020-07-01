@@ -6,7 +6,7 @@ use tokio::fs;
 use tokio::io::ErrorKind;
 use urlencoding::decode;
 
-use crate::{config, error};
+use crate::{config, response};
 
 #[derive(Debug)]
 pub struct FileHandler {
@@ -30,7 +30,7 @@ impl FileHandler {
         if request.method() != http::Method::GET {
             return Err((
                 request,
-                error::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
+                response::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
             ));
         }
 
@@ -57,7 +57,7 @@ impl DirHandler {
         if request.method() != http::Method::GET {
             return Err((
                 request,
-                error::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
+                response::from_status(http::StatusCode::METHOD_NOT_ALLOWED),
             ));
         }
 
@@ -71,7 +71,7 @@ impl DirHandler {
             Ok(path) => path,
             Err(err) => {
                 log::info!("Invalid path `{}`: {}", path, err);
-                return Ok(error::from_status(http::StatusCode::BAD_REQUEST));
+                return Ok(response::from_status(http::StatusCode::BAD_REQUEST));
             }
         };
 
@@ -81,7 +81,7 @@ impl DirHandler {
                 path.extend(components);
                 Ok(file_response(&path).await)
             }
-            None => Ok(error::from_status(http::StatusCode::NOT_FOUND)),
+            None => Ok(response::from_status(http::StatusCode::NOT_FOUND)),
         }
     }
 }
@@ -113,26 +113,26 @@ async fn file_response(path: &Path) -> http::Response<Body> {
         Ok(file) => file,
         Err(err) if err.kind() == ErrorKind::NotFound => {
             log::info!("File not found: `{}`", path.display());
-            return error::from_status(http::StatusCode::NOT_FOUND);
+            return response::from_status(http::StatusCode::NOT_FOUND);
         }
         #[cfg(windows)]
         Err(err) if err.raw_os_error() == Some(123) => {
             log::info!("Invalid file name: `{}`", path.display());
-            return error::from_status(http::StatusCode::NOT_FOUND);
+            return response::from_status(http::StatusCode::NOT_FOUND);
         }
         #[cfg(windows)]
         Err(err) if err.raw_os_error() == Some(5) && path.is_dir() => {
             log::info!("Path is a directory: `{}`", path.display());
-            return error::from_status(http::StatusCode::NOT_FOUND);
+            return response::from_status(http::StatusCode::NOT_FOUND);
         }
         #[cfg(unix)]
         Err(err) if err.raw_os_error() == Some(21) => {
             log::info!("Path is a directory: `{}`", path.display());
-            return error::from_status(http::StatusCode::NOT_FOUND);
+            return response::from_status(http::StatusCode::NOT_FOUND);
         }
         Err(err) => {
             log::error!("Error opening file: {}", err);
-            return error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR);
+            return response::from_status(http::StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 

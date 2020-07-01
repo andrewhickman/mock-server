@@ -6,7 +6,7 @@ use hyper::Body;
 use hyper_rustls::HttpsConnector;
 use once_cell::sync::Lazy;
 
-use crate::{config, error};
+use crate::{config, response};
 
 #[derive(Debug)]
 pub struct ProxyHandler {
@@ -34,7 +34,7 @@ impl ProxyHandler {
             Ok(uri) => uri,
             Err(err) => {
                 log::info!("path `{}` produced invalid uri: {}", path, err);
-                return Ok(error::from_status(http::StatusCode::NOT_FOUND));
+                return Ok(response::from_status(http::StatusCode::NOT_FOUND));
             }
         };
 
@@ -52,12 +52,12 @@ impl ProxyHandler {
         log::debug!("Forwarding request to `{}`", request.uri());
 
         match self.client.request(request).await {
-            Ok(response) => {
-                Ok(response)
-            }
+            Ok(response) => Ok(response),
             Err(err) => {
                 log::error!("Error making request: {}", err);
-                Ok(error::from_status(http::StatusCode::INTERNAL_SERVER_ERROR))
+                Ok(response::from_status(
+                    http::StatusCode::INTERNAL_SERVER_ERROR,
+                ))
             }
         }
     }

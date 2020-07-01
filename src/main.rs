@@ -1,8 +1,8 @@
 use structopt::StructOpt;
 
 mod config;
-mod error;
 mod handler;
+mod response;
 mod route;
 mod server;
 mod tls;
