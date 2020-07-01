@@ -39,6 +39,8 @@ pub struct Config {
 pub struct Route {
     pub route: route::Route,
     pub rewrite_path: Option<String>,
+    #[serde(with = "http_serde::header_map", default)]
+    pub response_headers: http::HeaderMap,
     #[serde(flatten)]
     pub kind: RouteKind,
 }
@@ -74,8 +76,6 @@ pub struct JsonRoute {
 pub struct ProxyRoute {
     #[serde(rename = "url", with = "http_serde::uri")]
     pub uri: Uri,
-    #[serde(with = "http_serde::header_map", default)]
-    pub response_headers: http::HeaderMap,
 }
 
 impl Config {

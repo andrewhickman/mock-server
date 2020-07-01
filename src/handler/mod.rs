@@ -15,6 +15,7 @@ use crate::config;
 pub struct Handler {
     kind: HandlerKind,
     path_rewriter: Option<PathRewriter>,
+    response_headers: http::HeaderMap,
 }
 
 #[derive(Debug)]
@@ -37,6 +38,7 @@ impl Handler {
             rewrite_path,
             route,
             kind,
+            response_headers,
         } = route;
         let path_rewriter = rewrite_path.map(|replace| {
             let regex = route.to_regex();
@@ -53,6 +55,7 @@ impl Handler {
         Ok(Handler {
             path_rewriter,
             kind,
+            response_headers,
         })
     }
 
@@ -65,12 +68,18 @@ impl Handler {
             None => request.uri().path().to_owned(),
         };
 
-        match &self.kind {
+        let mut result = match &self.kind {
             HandlerKind::File(file) => file.handle(request).await,
             HandlerKind::Dir(dir) => dir.handle(request, &path).await,
             HandlerKind::Proxy(proxy) => proxy.handle(request, &path).await,
             HandlerKind::Json(json) => json.handle(request, &path).await,
+        };
+
+        if let Ok(response) = &mut result {
+            response.headers_mut().extend(self.response_headers.clone());
         }
+
+        result
     }
 }
 

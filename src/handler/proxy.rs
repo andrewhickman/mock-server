@@ -52,10 +52,7 @@ impl ProxyHandler {
         log::debug!("Forwarding request to `{}`", request.uri());
 
         match self.client.request(request).await {
-            Ok(mut response) => {
-                response
-                    .headers_mut()
-                    .extend(self.config.response_headers.clone());
+            Ok(response) => {
                 Ok(response)
             }
             Err(err) => {
