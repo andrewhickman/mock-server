@@ -52,6 +52,7 @@ pub enum RouteKind {
     File(FileRoute),
     Proxy(ProxyRoute),
     Json(JsonRoute),
+    Mock(MockRoute),
 }
 
 #[derive(Debug, Deserialize)]
@@ -69,6 +70,13 @@ pub struct JsonRoute {
     pub path: PathBuf,
     #[serde(default)]
     pub pretty: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MockRoute {
+    #[serde(with = "http_serde::status_code")]
+    pub status: http::StatusCode,
+    pub body: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -95,6 +103,7 @@ impl Route {
             RouteKind::File(file) => file.validate(),
             RouteKind::Proxy(proxy) => proxy.validate(),
             RouteKind::Json(json) => json.validate(),
+            RouteKind::Mock(_) => Ok(()),
         }
     }
 }

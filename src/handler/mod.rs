@@ -1,5 +1,6 @@
 mod fs;
 mod json;
+mod mock;
 mod proxy;
 
 use anyhow::Result;
@@ -8,6 +9,7 @@ use regex::Regex;
 
 use self::fs::{DirHandler, FileHandler};
 use self::json::JsonHandler;
+use self::mock::MockHandler;
 use self::proxy::ProxyHandler;
 use crate::config;
 
@@ -24,6 +26,7 @@ pub enum HandlerKind {
     Dir(DirHandler),
     Proxy(ProxyHandler),
     Json(JsonHandler),
+    Mock(MockHandler),
 }
 
 #[derive(Debug)]
@@ -50,6 +53,7 @@ impl Handler {
             config::RouteKind::Dir(dir) => HandlerKind::Dir(DirHandler::new(dir)),
             config::RouteKind::Proxy(proxy) => HandlerKind::Proxy(ProxyHandler::new(proxy)),
             config::RouteKind::Json(json) => HandlerKind::Json(JsonHandler::new(json).await?),
+            config::RouteKind::Mock(mock) => HandlerKind::Mock(MockHandler::new(mock)),
         };
 
         Ok(Handler {
@@ -73,6 +77,7 @@ impl Handler {
             HandlerKind::Dir(dir) => dir.handle(request, &path).await,
             HandlerKind::Proxy(proxy) => proxy.handle(request, &path).await,
             HandlerKind::Json(json) => json.handle(request, &path).await,
+            HandlerKind::Mock(mock) => mock.handle(request).await,
         };
 
         if let Ok(response) = &mut result {
