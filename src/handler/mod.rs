@@ -5,13 +5,13 @@ mod proxy;
 
 use anyhow::Result;
 use hyper::Body;
-use regex::Regex;
 
 use self::fs::{DirHandler, FileHandler};
 use self::json::JsonHandler;
 use self::mock::MockHandler;
 use self::proxy::ProxyHandler;
 use crate::config;
+use crate::path::PathRewriter;
 
 #[derive(Debug)]
 pub struct Handler {
@@ -29,12 +29,6 @@ pub enum HandlerKind {
     Mock(MockHandler),
 }
 
-#[derive(Debug)]
-pub struct PathRewriter {
-    regex: Regex,
-    replace: String,
-}
-
 impl Handler {
     pub async fn new(route: config::Route) -> Result<Self> {
         let config::Route {
@@ -45,7 +39,7 @@ impl Handler {
         } = route;
         let path_rewriter = rewrite_path.map(|replace| {
             let regex = route.to_regex();
-            PathRewriter { regex, replace }
+            PathRewriter::new(regex, replace)
         });
 
         let kind = match kind {
@@ -85,11 +79,5 @@ impl Handler {
         }
 
         result
-    }
-}
-
-impl PathRewriter {
-    fn rewrite<'a>(&self, path: &'a str) -> String {
-        self.regex.replace(path, self.replace.as_str()).into_owned()
     }
 }
