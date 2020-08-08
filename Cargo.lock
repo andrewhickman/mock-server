@@ -705,6 +705,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "mock-server"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "env_logger",
+ "fn-error-context",
+ "futures",
+ "headers",
+ "http",
+ "http-serde",
+ "hyper",
+ "hyper-rustls",
+ "json-patch",
+ "log",
+ "log-panics",
+ "mime",
+ "mime_guess",
+ "once_cell",
+ "regex",
+ "regex-syntax",
+ "rustls",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "structopt",
+ "tokio",
+ "tokio-rustls",
+ "urlencoding",
+ "vergen",
+]
+
+[[package]]
 name = "net2"
 version = "0.2.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -845,39 +878,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "beae6331a816b1f65d04c45b078fd8e6c93e8071771f41b8163255bbd8d7c8fa"
 dependencies = [
  "unicode-xid",
-]
-
-[[package]]
-name = "proxy-server"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "bytes",
- "env_logger",
- "fn-error-context",
- "futures",
- "headers",
- "http",
- "http-serde",
- "hyper",
- "hyper-rustls",
- "json-patch",
- "log",
- "log-panics",
- "mime",
- "mime_guess",
- "once_cell",
- "regex",
- "regex-syntax",
- "rustls",
- "serde",
- "serde_json",
- "serde_yaml",
- "structopt",
- "tokio",
- "tokio-rustls",
- "urlencoding",
- "vergen",
 ]
 
 [[package]]

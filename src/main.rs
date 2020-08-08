@@ -29,7 +29,7 @@ pub struct Options {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().filter_or("PROXY_SERVER_LOG", "info"));
+    env_logger::init_from_env(env_logger::Env::new().filter_or("MOCK_SERVER_LOG", "info"));
     log_panics::init();
 
     let options = Options::from_args();

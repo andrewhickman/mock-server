@@ -1,17 +1,17 @@
 [package]
-name = "proxy-server"
-description = "proxy-server."
+name = "mock-server"
+description = "mock-server."
 version = "1.0.0"
 authors = ["Andrew Hickman <andrew.hickman1@sky.com>"]
-repository = "https://github.com/andrewhickman/proxy-server"
-documentation = "https://docs.rs/proxy-server"
+repository = "https://github.com/andrewhickman/mock-server"
+documentation = "https://docs.rs/mock-server"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 edition = "2018"
 build = "build.rs"
 
 [[bin]]
-name = "serve-proxy"
+name = "serve-mock"
 path = "src/main.rs"
 
 [dependencies]
