@@ -6,6 +6,7 @@ use tokio::fs;
 use tokio::io::ErrorKind;
 use urlencoding::decode;
 
+use crate::method::MethodFilter;
 use crate::{config, response};
 
 #[derive(Debug)]
@@ -16,6 +17,10 @@ pub struct FileHandler {
 #[derive(Debug)]
 pub struct DirHandler {
     config: config::DirRoute,
+}
+
+pub fn default_method_filter() -> Box<dyn MethodFilter> {
+    Box::new(|method: &http::Method| method == http::Method::GET)
 }
 
 impl FileHandler {

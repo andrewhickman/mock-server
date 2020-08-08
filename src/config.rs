@@ -8,6 +8,7 @@ use http::uri::Uri;
 use serde::Deserialize;
 use structopt::StructOpt;
 
+use crate::method::MethodSet;
 use crate::route;
 
 #[derive(Debug, StructOpt)]
@@ -39,6 +40,8 @@ pub struct Config {
 pub struct Route {
     pub route: route::Route,
     pub rewrite_path: Option<String>,
+    #[serde(alias = "method", default)]
+    pub methods: Option<MethodSet>,
     #[serde(with = "http_serde::header_map", default)]
     pub response_headers: http::HeaderMap,
     #[serde(flatten)]

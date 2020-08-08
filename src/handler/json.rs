@@ -13,6 +13,7 @@ use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{Notify, RwLock};
 use urlencoding::decode;
 
+use crate::method::MethodFilter;
 use crate::{config, response};
 
 #[derive(Debug)]
@@ -32,6 +33,10 @@ struct Sync {
     config: config::JsonRoute,
     file: File,
     buf: Vec<u8>,
+}
+
+pub fn default_method_filter() -> Box<dyn MethodFilter> {
+    Box::new(|method: &http::Method| method == http::Method::GET || method == http::Method::PATCH)
 }
 
 impl JsonHandler {

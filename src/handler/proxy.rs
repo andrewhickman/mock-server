@@ -6,12 +6,17 @@ use hyper::Body;
 use hyper_rustls::HttpsConnector;
 use once_cell::sync::Lazy;
 
+use crate::method::{self, MethodFilter};
 use crate::{config, response};
 
 #[derive(Debug)]
 pub struct ProxyHandler {
     config: config::ProxyRoute,
     client: Arc<Client<HttpsConnector<HttpConnector>>>,
+}
+
+pub fn default_method_filter() -> Box<dyn MethodFilter> {
+    method::any()
 }
 
 impl ProxyHandler {

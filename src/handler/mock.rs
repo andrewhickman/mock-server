@@ -1,10 +1,15 @@
 use hyper::Body;
 
+use crate::method::{self, MethodFilter};
 use crate::{config, response};
 
 #[derive(Debug)]
 pub struct MockHandler {
     config: config::MockRoute,
+}
+
+pub fn default_method_filter() -> Box<dyn MethodFilter> {
+    method::any()
 }
 
 impl MockHandler {

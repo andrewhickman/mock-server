@@ -2,6 +2,7 @@ use structopt::StructOpt;
 
 mod config;
 mod handler;
+mod method;
 mod path;
 mod response;
 mod route;
