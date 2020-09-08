@@ -50,6 +50,7 @@ pub struct Route {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)] 
 pub enum RouteKind {
     Dir(DirRoute),
     File(FileRoute),
@@ -59,16 +60,19 @@ pub enum RouteKind {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct DirRoute {
     pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct FileRoute {
     pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct JsonRoute {
     pub path: PathBuf,
     #[serde(default)]
@@ -76,6 +80,7 @@ pub struct JsonRoute {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct MockRoute {
     #[serde(with = "http_serde::status_code")]
     pub status: http::StatusCode,
@@ -83,7 +88,7 @@ pub struct MockRoute {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")] 
 pub struct ProxyRoute {
     #[serde(rename = "url", with = "http_serde::uri")]
     pub uri: Uri,
