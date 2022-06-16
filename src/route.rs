@@ -97,7 +97,7 @@ impl Router {
         http::Request<Body>,
         Response = http::Response<Body>,
         Error = Infallible,
-        Future = impl Send,
+        Future = impl Future<Output = Result<http::Response<Body>, Infallible>> + Send + 'static,
     > + Clone {
         let this = Arc::new(self);
         service_fn(move |request: http::Request<Body>| this.clone().handle(request).never_error())
